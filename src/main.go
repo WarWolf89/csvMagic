@@ -16,14 +16,25 @@ type phoneNumber struct {
 }
 
 func main() {
+
 	readCsvFile("../csv/South_African_Mobile_Numbers.csv")
+
+	fmt.Println("END")
 
 }
 
 func readCsvFile(filePath string) {
-
+	poolsize := 20
+	jobch := make(chan []string)
+	results := make(chan phoneNumber)
+	var wg sync.WaitGroup
 	start := time.Now()
-
+	counter := 0
+	// set up workers
+	for w := 1; w <= poolsize; w++ {
+		wg.Add(1)
+		go processData(jobch, results, &wg)
+	}
 	// Load a csv file.
 	f, err := os.Open(filePath)
 	if err != nil {
@@ -32,28 +43,43 @@ func readCsvFile(filePath string) {
 	}
 	defer f.Close()
 	// Create a new reader.
-	reader := csv.NewReader(bufio.NewReader(f))
-	var wg sync.WaitGroup
-	for {
-		record, err := reader.Read()
-		if err == io.EOF {
-			break
+	go func() {
+		reader := csv.NewReader(bufio.NewReader(f))
+		for {
+			record, err := reader.Read()
+			if err == io.EOF {
+				break
+			}
+			jobch <- record
 		}
+		close(jobch)
+	}()
 
-		wg.Add(1)
-		go func(record []string) {
-			defer wg.Done()
-			processData(record)
-		}(record)
+	go func() {
+		wg.Wait()
+		close(results)
+	}()
+
+	for v := range results {
+		fmt.Println(v)
+		counter++
 	}
-
-	// closer
-	wg.Wait()
+	fmt.Println(counter)
 	fmt.Printf("\n%2fs", time.Since(start).Seconds())
 }
 
-func processData(r []string) {
-
-	fmt.Println("started job", r)
-	fmt.Println("finished job", r)
+func processData(jobs <-chan []string, results chan<- phoneNumber, wg *sync.WaitGroup) {
+	defer wg.Done()
+	for j := range jobs {
+		results <- phoneNumber{j[0], j[1]}
+	}
 }
+
+// func setupWorkers(poolsize int, jobs chan []string, results chan<- phoneNumber, wg *sync.WaitGroup) {
+
+// 	for w := 1; w <= poolsize; w++ {
+// 		wg.Add(1)
+// 		go processData(jobs, results, wg)
+// 	}
+
+// }
