@@ -41,10 +41,9 @@ func validateStruct(pn *phoneNumber) {
 	}
 }
 
-func fixVal(valToFix *string) string {
+func fixVal(valToFix *string) {
 	re := regexp.MustCompile("\\D")
-	fixedVal := re.ReplaceAllString(*valToFix, "")
-	return fixedVal
+	*valToFix = re.ReplaceAllString(*valToFix, "")
 }
 
 var validate *validator.Validate
@@ -53,7 +52,7 @@ func main() {
 
 	validate = validator.New()
 
-	readCsvFile("../csv/South_African_Mobile_Numbers.csv")
+	readCsvFile("../csv/test.csv")
 
 	fmt.Println("END")
 
