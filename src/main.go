@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"reflect"
+	"regexp"
 	"sync"
 	"time"
 
@@ -27,15 +29,22 @@ func validateStruct(pn *phoneNumber) {
 		}
 
 		for _, err := range err.(validator.ValidationErrors) {
-
-			fmt.Println(err.Field())
-			fmt.Println(err.Value())
-			fmt.Println(err.Param())
+			val := fmt.Sprintf("%v", err.Value())
+			field := err.Field()
+			fmt.Printf("value before fixed %s \n ", val)
+			fixVal(&val)
+			reflect.ValueOf(pn).Elem().FieldByName(field).SetString(val)
+			fmt.Printf("value after fixed %s \n ", pn.SmsPhone)
 		}
 
 		return
 	}
+}
 
+func fixVal(valToFix *string) string {
+	re := regexp.MustCompile("\\D")
+	fixedVal := re.ReplaceAllString(*valToFix, "")
+	return fixedVal
 }
 
 var validate *validator.Validate
@@ -101,6 +110,7 @@ func processData(jobs <-chan []string, results chan<- phoneNumber, wg *sync.Wait
 	for j := range jobs {
 		pn = phoneNumber{j[0], j[1]}
 		validateStruct(&pn)
+		results <- pn
 	}
-	results <- pn
+
 }
