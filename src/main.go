@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"regexp"
 	"sync"
 	"time"
 
@@ -15,12 +14,7 @@ import (
 	validator "gopkg.in/go-playground/validator.v9"
 )
 
-type phoneNumber struct {
-	id       string
-	SmsPhone string `validate:"custom"`
-}
-
-func validateStruct(pn *phoneNumber) {
+func validateStruct(pn *utils.PhoneNumber) {
 	validate.RegisterValidation("custom", utils.ValidateFieldForSMSPhone)
 
 	err := validate.Struct(pn)
@@ -30,24 +24,8 @@ func validateStruct(pn *phoneNumber) {
 			return
 		}
 
-		for _, err := range err.(validator.ValidationErrors) {
-			fmt.Println(err.Field())
-			// val := fmt.Sprintf("%v", err.Value())
-			// field := err.Field()
-			// fmt.Printf("value before fixed %s \n ", val)
-			// fixVal(&val)
-			// reflect.ValueOf(pn).Elem().FieldByName(field).SetString(val)
-			// fmt.Printf("value after fixed %s \n ", pn.SmsPhone)
-		}
-
-		return
+		utils.FixVal(pn, err)
 	}
-}
-
-func fixVal(valToFix *string) {
-	// GOT TO RE-EVALUATE AFTER FIX ATTEMPT
-	re := regexp.MustCompile("\\D")
-	*valToFix = re.ReplaceAllString(*valToFix, "")
 }
 
 var validate *validator.Validate
@@ -65,7 +43,7 @@ func main() {
 func readCsvFile(filePath string) {
 	poolsize := 20
 	jobch := make(chan []string)
-	results := make(chan phoneNumber)
+	results := make(chan utils.PhoneNumber)
 	var wg sync.WaitGroup
 	start := time.Now()
 	counter := 0
@@ -107,11 +85,11 @@ func readCsvFile(filePath string) {
 	fmt.Printf("\n%2fs", time.Since(start).Seconds())
 }
 
-func processData(jobs <-chan []string, results chan<- phoneNumber, wg *sync.WaitGroup) {
+func processData(jobs <-chan []string, results chan<- utils.PhoneNumber, wg *sync.WaitGroup) {
 	defer wg.Done()
-	var pn phoneNumber
+	var pn utils.PhoneNumber
 	for j := range jobs {
-		pn = phoneNumber{j[0], j[1]}
+		pn = utils.PhoneNumber{j[0], j[1]}
 		validateStruct(&pn)
 		results <- pn
 	}

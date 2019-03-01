@@ -6,17 +6,18 @@ import (
 	validator "gopkg.in/go-playground/validator.v9"
 )
 
+// The Validator Method for phone strings
 func ValidateFieldForSMSPhone(fl validator.FieldLevel) bool {
-	fieldAsString := fl.Field().String()
-
-	return setupAndEvalParams(fieldAsString, validateLength)
+	return setupAndEvalParams(fl.Field().String(), validateLength, validateNoLetters)
 }
 
 func setupAndEvalParams(field string, options ...func(string) bool) bool {
 	isValid := true
-	for _, option := range options {
-		isValid = option(field)
+
+	for i := 0; i < len(options) && isValid; i++ {
+		isValid = options[i](field)
 	}
+
 	return isValid
 }
 
@@ -24,6 +25,7 @@ func validateLength(field string) bool {
 	return len(field) == 11
 }
 
+// turning around boolean value is never a good idea
 func validateNoLetters(field string) bool {
-	return regexp.MustCompile("\\D").MatchString(field)
+	return !regexp.MustCompile("\\D").MatchString(field)
 }
