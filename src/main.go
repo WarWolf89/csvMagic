@@ -6,20 +6,22 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"reflect"
 	"regexp"
 	"sync"
 	"time"
+
+	utils "./utils"
 
 	validator "gopkg.in/go-playground/validator.v9"
 )
 
 type phoneNumber struct {
 	id       string
-	SmsPhone string `validate:"min=11,max=11"`
+	SmsPhone string `validate:"custom"`
 }
 
 func validateStruct(pn *phoneNumber) {
+	validate.RegisterValidation("custom", utils.ValidateFieldForSMSPhone)
 
 	err := validate.Struct(pn)
 	if err != nil {
@@ -29,12 +31,13 @@ func validateStruct(pn *phoneNumber) {
 		}
 
 		for _, err := range err.(validator.ValidationErrors) {
-			val := fmt.Sprintf("%v", err.Value())
-			field := err.Field()
-			fmt.Printf("value before fixed %s \n ", val)
-			fixVal(&val)
-			reflect.ValueOf(pn).Elem().FieldByName(field).SetString(val)
-			fmt.Printf("value after fixed %s \n ", pn.SmsPhone)
+			fmt.Println(err.Field())
+			// val := fmt.Sprintf("%v", err.Value())
+			// field := err.Field()
+			// fmt.Printf("value before fixed %s \n ", val)
+			// fixVal(&val)
+			// reflect.ValueOf(pn).Elem().FieldByName(field).SetString(val)
+			// fmt.Printf("value after fixed %s \n ", pn.SmsPhone)
 		}
 
 		return
@@ -42,6 +45,7 @@ func validateStruct(pn *phoneNumber) {
 }
 
 func fixVal(valToFix *string) {
+	// GOT TO RE-EVALUATE AFTER FIX ATTEMPT
 	re := regexp.MustCompile("\\D")
 	*valToFix = re.ReplaceAllString(*valToFix, "")
 }
