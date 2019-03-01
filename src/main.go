@@ -8,14 +8,41 @@ import (
 	"os"
 	"sync"
 	"time"
+
+	validator "gopkg.in/go-playground/validator.v9"
 )
 
 type phoneNumber struct {
 	id       string
-	smsPhone string
+	SmsPhone string `validate:"min=11,max=11"`
 }
 
+func validateStruct(pn *phoneNumber) {
+
+	err := validate.Struct(pn)
+	if err != nil {
+		if _, ok := err.(*validator.InvalidValidationError); ok {
+			fmt.Println(err)
+			return
+		}
+
+		for _, err := range err.(validator.ValidationErrors) {
+
+			fmt.Println(err.Field())
+			fmt.Println(err.Value())
+			fmt.Println(err.Param())
+		}
+
+		return
+	}
+
+}
+
+var validate *validator.Validate
+
 func main() {
+
+	validate = validator.New()
 
 	readCsvFile("../csv/South_African_Mobile_Numbers.csv")
 
@@ -70,16 +97,10 @@ func readCsvFile(filePath string) {
 
 func processData(jobs <-chan []string, results chan<- phoneNumber, wg *sync.WaitGroup) {
 	defer wg.Done()
+	var pn phoneNumber
 	for j := range jobs {
-		results <- phoneNumber{j[0], j[1]}
+		pn = phoneNumber{j[0], j[1]}
+		validateStruct(&pn)
 	}
+	results <- pn
 }
-
-// func setupWorkers(poolsize int, jobs chan []string, results chan<- phoneNumber, wg *sync.WaitGroup) {
-
-// 	for w := 1; w <= poolsize; w++ {
-// 		wg.Add(1)
-// 		go processData(jobs, results, wg)
-// 	}
-
-// }
