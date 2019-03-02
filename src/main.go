@@ -2,15 +2,15 @@ package main
 
 import (
 	"bufio"
-	"encoding/csv"
 	"fmt"
-	"io"
+	"log"
 	"os"
 	"sync"
 	"time"
 
 	utils "./utils"
 
+	"github.com/smartystreets/scanners/csv"
 	validator "gopkg.in/go-playground/validator.v9"
 )
 
@@ -34,15 +34,14 @@ func main() {
 
 	validate = validator.New()
 
-	readCsvFile("../csv/test.csv")
-
+	readCsvFile("../csv/fullTest.csv")
 	fmt.Println("END")
 
 }
 
 func readCsvFile(filePath string) {
 	poolsize := 20
-	jobch := make(chan []string)
+	jobch := make(chan utils.PhoneNumber)
 	results := make(chan utils.PhoneNumber)
 	var wg sync.WaitGroup
 	start := time.Now()
@@ -61,13 +60,16 @@ func readCsvFile(filePath string) {
 	defer f.Close()
 	// Create a new reader.
 	go func() {
-		reader := csv.NewReader(bufio.NewReader(f))
-		for {
-			record, err := reader.Read()
-			if err == io.EOF {
-				break
+		scanner, err := csv.NewStructScanner(bufio.NewReader(f))
+		if err != nil {
+			log.Panic(err)
+		}
+		var pn utils.PhoneNumber
+		for scanner.Scan() {
+			if err := scanner.Populate(&pn); err != nil {
+				log.Panic(err)
 			}
-			jobch <- record
+			jobch <- pn
 		}
 		close(jobch)
 	}()
@@ -85,13 +87,10 @@ func readCsvFile(filePath string) {
 	fmt.Printf("\n%2fs", time.Since(start).Seconds())
 }
 
-func processData(jobs <-chan []string, results chan<- utils.PhoneNumber, wg *sync.WaitGroup) {
+func processData(jobs <-chan utils.PhoneNumber, results chan<- utils.PhoneNumber, wg *sync.WaitGroup) {
 	defer wg.Done()
-	var pn utils.PhoneNumber
 	for j := range jobs {
-		pn = utils.PhoneNumber{j[0], j[1]}
-		validateStruct(&pn)
-		results <- pn
+		validateStruct(&j)
+		results <- j
 	}
-
 }

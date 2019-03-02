@@ -9,8 +9,8 @@ import (
 )
 
 type PhoneNumber struct {
-	Id       string
-	SmsPhone string `validate:"custom"`
+	ID       string `csv:"id"`
+	SmsPhone string `csv:"sms_phone" validate:"custom"`
 }
 
 func FixVal(pn *PhoneNumber, err error) {
