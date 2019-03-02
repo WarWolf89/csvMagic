@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"log"
 	"os"
@@ -9,13 +10,17 @@ import (
 	"time"
 
 	utils "./utils"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"github.com/smartystreets/scanners/csv"
 )
 
 var (
-	jobch   = make(chan utils.PhoneNumber)
-	results = make(chan utils.PhoneNumber)
+	jobch      = make(chan utils.PhoneNumber)
+	results    = make(chan utils.PhoneNumber)
+	client, _  = mongo.Connect(context.Background(), options.Client().ApplyURI("mongodb://localhost:27017"))
+	collection = client.Database("local").Collection("csv-test")
 )
 
 func main() {
@@ -26,6 +31,7 @@ func main() {
 }
 
 func readCsvFile(filePath string) {
+
 	poolsize := 20
 	var wg sync.WaitGroup
 	start := time.Now()
@@ -75,6 +81,11 @@ func processData(jobs <-chan utils.PhoneNumber, results chan<- utils.PhoneNumber
 	defer wg.Done()
 	for j := range jobs {
 		utils.CheckAndFixStruct(&j)
+		res, err := collection.InsertOne(context.Background(), j)
+		fmt.Println(res)
+		if err != nil {
+			panic(err)
+		}
 		results <- j
 	}
 }
