@@ -13,16 +13,15 @@ type PhoneNumber struct {
 	SmsPhone string `csv:"sms_phone" validate:"custom"`
 }
 
-func FixVal(pn *PhoneNumber, err error) {
-	for _, err := range err.(validator.ValidationErrors) {
-		fmt.Println(err.Field())
-		val := fmt.Sprintf("%v", err.Value())
-		replacement := regexp.MustCompile("\\D").ReplaceAllString(val, "")
-		field := err.Field()
-		if !validateLength(replacement) {
-			fmt.Printf("couldn't fix error %s \n ", val)
-			return
-		}
-		reflect.ValueOf(pn).Elem().FieldByName(field).SetString(replacement)
-	}
+func FixVal(pn *PhoneNumber, err validator.FieldError) {
+
+	val := fmt.Sprintf("%v", err.Value())
+	replacement := regexp.MustCompile("\\D").ReplaceAllString(val, "")
+	field := err.Field()
+	// if len(replacement) != 11 {
+	// 	fmt.Printf("couldn't fix error %s \n ", val)
+	// 	return
+	// }
+	reflect.ValueOf(pn).Elem().FieldByName(field).SetString(replacement)
+
 }

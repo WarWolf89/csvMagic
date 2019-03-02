@@ -14,25 +14,17 @@ import (
 	validator "gopkg.in/go-playground/validator.v9"
 )
 
-func validateStruct(pn *utils.PhoneNumber) {
+var (
+	jobch    = make(chan utils.PhoneNumber)
+	results  = make(chan utils.PhoneNumber)
+	validate = validator.New()
+)
+
+func init() {
 	validate.RegisterValidation("custom", utils.ValidateFieldForSMSPhone)
-
-	err := validate.Struct(pn)
-	if err != nil {
-		if _, ok := err.(*validator.InvalidValidationError); ok {
-			fmt.Println(err)
-			return
-		}
-
-		utils.FixVal(pn, err)
-	}
 }
 
-var validate *validator.Validate
-
 func main() {
-
-	validate = validator.New()
 
 	readCsvFile("../csv/fullTest.csv")
 	fmt.Println("END")
@@ -41,8 +33,6 @@ func main() {
 
 func readCsvFile(filePath string) {
 	poolsize := 20
-	jobch := make(chan utils.PhoneNumber)
-	results := make(chan utils.PhoneNumber)
 	var wg sync.WaitGroup
 	start := time.Now()
 	counter := 0
@@ -90,7 +80,7 @@ func readCsvFile(filePath string) {
 func processData(jobs <-chan utils.PhoneNumber, results chan<- utils.PhoneNumber, wg *sync.WaitGroup) {
 	defer wg.Done()
 	for j := range jobs {
-		validateStruct(&j)
+		utils.CheckAndFixStruct(&j, validate)
 		results <- j
 	}
 }

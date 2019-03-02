@@ -1,14 +1,30 @@
 package utils
 
 import (
+	"fmt"
 	"regexp"
 
 	validator "gopkg.in/go-playground/validator.v9"
 )
 
+func CheckAndFixStruct(pn *PhoneNumber, validate *validator.Validate) {
+	// The actual validate methods are the ones defined in the struct itself, those are teh ones called here 
+	err := validate.Struct(pn)
+	if err != nil {
+		if _, ok := err.(*validator.InvalidValidationError); ok {
+			fmt.Println(err)
+			return
+		}
+
+		for _, err := range err.(validator.ValidationErrors) {
+			FixVal(pn, err)
+		}
+	}
+}
+
 // The Validator Method for phone strings
 func ValidateFieldForSMSPhone(fl validator.FieldLevel) bool {
-	return setupAndEvalParams(fl.Field().String(), validateLength, validateNoLetters)
+	return setupAndEvalParams(fl.Field().String(), validateLettersAndLength)
 }
 
 func setupAndEvalParams(field string, options ...func(string) bool) bool {
@@ -21,11 +37,14 @@ func setupAndEvalParams(field string, options ...func(string) bool) bool {
 	return isValid
 }
 
-func validateLength(field string) bool {
-	return len(field) == 11
-}
+func validateLettersAndLength(field string) bool {
+	re := regexp.MustCompile("\\D")
 
-// turning around boolean value is never a good idea
-func validateNoLetters(field string) bool {
-	return !regexp.MustCompile("\\D").MatchString(field)
+	if re.MatchString(field) {
+		return false
+	}
+	if len(field) != 11 {
+		return false
+	}
+	return true
 }
