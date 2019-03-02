@@ -11,22 +11,16 @@ import (
 	utils "./utils"
 
 	"github.com/smartystreets/scanners/csv"
-	validator "gopkg.in/go-playground/validator.v9"
 )
 
 var (
-	jobch    = make(chan utils.PhoneNumber)
-	results  = make(chan utils.PhoneNumber)
-	validate = validator.New()
+	jobch   = make(chan utils.PhoneNumber)
+	results = make(chan utils.PhoneNumber)
 )
-
-func init() {
-	validate.RegisterValidation("custom", utils.ValidateFieldForSMSPhone)
-}
 
 func main() {
 
-	readCsvFile("../csv/fullTest.csv")
+	readCsvFile("../csv/test.csv")
 	fmt.Println("END")
 
 }
@@ -80,7 +74,7 @@ func readCsvFile(filePath string) {
 func processData(jobs <-chan utils.PhoneNumber, results chan<- utils.PhoneNumber, wg *sync.WaitGroup) {
 	defer wg.Done()
 	for j := range jobs {
-		utils.CheckAndFixStruct(&j, validate)
+		utils.CheckAndFixStruct(&j)
 		results <- j
 	}
 }
