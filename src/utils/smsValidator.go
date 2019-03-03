@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 
+	root "../../pkg"
 	validator "gopkg.in/go-playground/validator.v9"
 )
 
@@ -15,7 +16,7 @@ func init() {
 	validate.RegisterValidation("custom", validateFieldForSMSPhone)
 }
 
-func CheckAndFixStruct(pn *PhoneNumber) {
+func CheckAndFixStruct(pn *root.PhoneNumber) {
 	// The actual validate methods are the ones defined in the struct itself, those are teh ones called here
 	err := validate.Struct(pn)
 	if err != nil {

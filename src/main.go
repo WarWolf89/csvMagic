@@ -2,36 +2,34 @@ package main
 
 import (
 	"bufio"
-	"context"
 	"fmt"
 	"log"
 	"os"
 	"sync"
 	"time"
 
+	root "../pkg"
+	mongoutils "../pkg/mongoutils"
 	utils "./utils"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"github.com/smartystreets/scanners/csv"
 )
 
 var (
-	jobch      = make(chan utils.PhoneNumber)
-	results    = make(chan utils.PhoneNumber)
-	client, _  = mongo.Connect(context.Background(), options.Client().ApplyURI("mongodb://localhost:27017"))
-	collection = client.Database("local").Collection("csv-test")
+	jobch           = make(chan root.PhoneNumber)
+	results         = make(chan root.PhoneNumber)
+	client, context = mongoutils.SetupConnection("mongodb://localhost:27017")
 )
 
 func main() {
 
-	readCsvFile("../csv/test.csv")
+	readCsvFile("../resources/csv/fullTest.csv")
 	fmt.Println("END")
 
 }
 
 func readCsvFile(filePath string) {
-
+	csvService := mongoutils.CreateCsvService(client, "local", "csv-test")
 	poolsize := 20
 	var wg sync.WaitGroup
 	start := time.Now()
@@ -39,7 +37,7 @@ func readCsvFile(filePath string) {
 	// set up workers
 	for w := 1; w <= poolsize; w++ {
 		wg.Add(1)
-		go processData(jobch, results, &wg)
+		go processData(jobch, results, &wg, csvService)
 	}
 	// Load a csv file.
 	f, err := os.Open(filePath)
@@ -54,7 +52,7 @@ func readCsvFile(filePath string) {
 		if err != nil {
 			log.Panic(err)
 		}
-		var pn utils.PhoneNumber
+		var pn root.PhoneNumber
 		for scanner.Scan() {
 			if err := scanner.Populate(&pn); err != nil {
 				log.Panic(err)
@@ -77,11 +75,11 @@ func readCsvFile(filePath string) {
 	fmt.Printf("\n%2fs", time.Since(start).Seconds())
 }
 
-func processData(jobs <-chan utils.PhoneNumber, results chan<- utils.PhoneNumber, wg *sync.WaitGroup) {
+func processData(jobs <-chan root.PhoneNumber, results chan<- root.PhoneNumber, wg *sync.WaitGroup, csvService *mongoutils.CsvService) {
 	defer wg.Done()
 	for j := range jobs {
 		utils.CheckAndFixStruct(&j)
-		res, err := collection.InsertOne(context.Background(), j)
+		res, err := csvService.Collection.InsertOne(csvService.Context, j)
 		fmt.Println(res)
 		if err != nil {
 			panic(err)
