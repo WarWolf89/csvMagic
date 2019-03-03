@@ -16,7 +16,7 @@ func init() {
 	validate.RegisterValidation("custom", validateFieldForSMSPhone)
 }
 
-func CheckAndFixStruct(pn *root.PhoneNumber) {
+func CheckAndFixStruct(pn *root.PhoneNumber, fm *root.FileMeta) {
 	// The actual validate methods are the ones defined in the struct itself, those are the ones called here
 	err := validate.Struct(pn)
 	if err != nil {
@@ -26,8 +26,11 @@ func CheckAndFixStruct(pn *root.PhoneNumber) {
 		}
 
 		for _, err := range err.(validator.ValidationErrors) {
-			fixVal(pn, err)
+			fixVal(pn, err, fm)
 		}
+	}
+	if err == nil {
+		fm.IncreaseCounter("valid")
 	}
 }
 
