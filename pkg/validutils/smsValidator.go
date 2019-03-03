@@ -1,4 +1,4 @@
-package utils
+package validutils
 
 import (
 	"fmt"
@@ -17,7 +17,7 @@ func init() {
 }
 
 func CheckAndFixStruct(pn *root.PhoneNumber) {
-	// The actual validate methods are the ones defined in the struct itself, those are teh ones called here
+	// The actual validate methods are the ones defined in the struct itself, those are the ones called here
 	err := validate.Struct(pn)
 	if err != nil {
 		if _, ok := err.(*validator.InvalidValidationError); ok {

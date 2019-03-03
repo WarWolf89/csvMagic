@@ -8,9 +8,9 @@ import (
 	"sync"
 	"time"
 
-	root "../pkg"
-	mongoutils "../pkg/mongoutils"
-	utils "./utils"
+	root "../../pkg"
+	mongoutils "../../pkg/mongoutils"
+	validutils "../../pkg/validutils"
 
 	"github.com/smartystreets/scanners/csv"
 )
@@ -23,7 +23,7 @@ var (
 
 func main() {
 
-	readCsvFile("../resources/csv/fullTest.csv")
+	readCsvFile("../../resources/csv/test.csv")
 	fmt.Println("END")
 
 }
@@ -78,7 +78,7 @@ func readCsvFile(filePath string) {
 func processData(jobs <-chan root.PhoneNumber, results chan<- root.PhoneNumber, wg *sync.WaitGroup, csvService *mongoutils.CsvService) {
 	defer wg.Done()
 	for j := range jobs {
-		utils.CheckAndFixStruct(&j)
+		validutils.CheckAndFixStruct(&j)
 		res, err := csvService.Collection.InsertOne(csvService.Context, j)
 		fmt.Println(res)
 		if err != nil {
