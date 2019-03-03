@@ -10,7 +10,7 @@ type ProcRes struct {
 }
 
 type PhoneNumber struct {
-	ID       string   `csv:"id" bson:"id"`
+	ID       string   `csv:"id" bson:"_id"`
 	FileID   string   `bson:"file_id"`
 	SmsPhone string   `csv:"sms_phone" bson:"sms_phone" validate:"custom"`
 	ProcRes  *ProcRes `bson:"process_results,omitempty"`
@@ -18,7 +18,7 @@ type PhoneNumber struct {
 
 type FileMeta struct {
 	sync.Mutex `bson:"-"`
-	UUID       string           `bson:"uuid"`
+	UUID       string           `bson:"_id"`
 	Name       string           `bson:"name"`
 	Counters   map[string]int64 `bson:"stats"`
 	ExecTime   float64          `bson:"execution_time"`
