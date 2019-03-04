@@ -19,7 +19,7 @@ var (
 	client, context = mongoutils.SetupConnection("mongodb://localhost:27017")
 )
 
-func ProcessCsv(file multipart.File, header string) (*root.FileMeta, error) {
+func ProcessCsv(file multipart.File, name string) (*root.FileMeta, error) {
 	jobch := make(chan root.PhoneNumber)
 	poolsize := 20
 	start := time.Now()
@@ -28,7 +28,7 @@ func ProcessCsv(file multipart.File, header string) (*root.FileMeta, error) {
 	// generate uuid for the file and use it as a reference for later lookups
 	uuID := xid.New()
 	// set up the meta struct for response
-	fm := root.NewFileMeta(uuID.String(), header)
+	fm := root.NewFileMeta(uuID.String(), name)
 	// Set up the mongodb service
 	metaService := mongoutils.CreateCsvService(client, "local", "META")
 	csvService := mongoutils.CreateCsvService(client, "local", "csv-test")
@@ -38,28 +38,27 @@ func ProcessCsv(file multipart.File, header string) (*root.FileMeta, error) {
 		go processData(jobch, &wg, csvService, fm)
 	}
 	// Create a new reader.
-	go func() {
-		scanner, err := csv.NewStructScanner(bufio.NewReader(file))
-		if err != nil {
+
+	scanner, err := csv.NewStructScanner(bufio.NewReader(file))
+	if err != nil {
+		log.Panic(err)
+	}
+	var pn root.PhoneNumber
+	for scanner.Scan() {
+		if err := scanner.Populate(&pn); err != nil {
 			log.Panic(err)
 		}
-		var pn root.PhoneNumber
-		for scanner.Scan() {
-			if err := scanner.Populate(&pn); err != nil {
-				log.Panic(err)
-			}
 
-			pn.FileID = uuID.String()
-			jobch <- pn
-		}
-		close(jobch)
+		pn.FileID = uuID.String()
+		jobch <- pn
+	}
+	close(jobch)
 
-	}()
-	go func() {
-		wg.Wait()
-		fm.ExecTime = time.Since(start).Seconds()
-		writeMetaToMongo(metaService, fm)
-	}()
+	// wait for all jobs to finish
+	wg.Wait()
+	// set execution time and write file data to mongo
+	fm.ExecTime = time.Since(start).Seconds()
+	writeMetaToMongo(metaService, fm)
 
 	return fm, nil
 }

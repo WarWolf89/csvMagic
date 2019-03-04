@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	reader "../reader"
+	restutils "../restutils"
 )
 
 // Uploads a File and send it to be processed
@@ -17,6 +18,9 @@ func CsvUpload(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 	name := strings.Split(header.Filename, ".")[0]
-	reader.ProcessCsv(file, name)
-	return
+	fm, err := reader.ProcessCsv(file, name)
+	if err != nil {
+		restutils.RespondWithError(w, http.StatusInternalServerError, err.Error())
+	}
+	restutils.RespondWithJSON(w, http.StatusCreated, fm)
 }
