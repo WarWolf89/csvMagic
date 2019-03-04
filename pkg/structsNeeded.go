@@ -18,10 +18,15 @@ type PhoneNumber struct {
 
 type FileMeta struct {
 	sync.Mutex `bson:"-"`
-	UUID       string           `bson:"_id"`
-	Name       string           `bson:"name"`
+	UUID       string `bson:"_id"`
+	Name       string
 	Counters   map[string]int64 `bson:"stats"`
 	ExecTime   float64          `bson:"execution_time"`
+	Errors     []string         `bson:"runtime_errors,omitempty"`
+}
+
+func NewFileMeta(uuid string, name string) *FileMeta {
+	return &FileMeta{UUID: uuid, Name: name, Counters: make(map[string]int64), Errors: []string{}}
 }
 
 func (fm *FileMeta) IncreaseCounter(key string) {

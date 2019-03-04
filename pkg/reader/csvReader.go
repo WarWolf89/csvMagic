@@ -36,12 +36,11 @@ func ReadCsvFile(filePath string) (*root.FileMeta, error) {
 	// generate uuid for the file and use it as a reference for later lookups
 	uuID := xid.New()
 	// set up the meta struct for response
-	fm := &root.FileMeta{UUID: uuID.String(), Name: f.Name(), Counters: make(map[string]int64)}
+	fm := root.NewFileMeta(uuID.String(), f.Name())
 	// Set up the mongodb service
-
 	metaService := mongoutils.CreateCsvService(client, "local", "META")
 
-	colln := "test"
+	colln := "abc"
 	csvService := mongoutils.CreateCsvService(client, "local", colln)
 
 	// set up workers for the pool
@@ -74,7 +73,6 @@ func ReadCsvFile(filePath string) (*root.FileMeta, error) {
 
 	writeToMongo(results, csvService, fm)
 	fm.ExecTime = time.Since(start).Seconds()
-	fmt.Println(fm)
 
 	_, inErr := metaService.Collection.InsertOne(metaService.Context, fm)
 	if inErr != nil {
@@ -95,7 +93,7 @@ func writeToMongo(results <-chan root.PhoneNumber, csvService *mongoutils.CsvSer
 	for r := range results {
 		_, err := csvService.Collection.InsertOne(csvService.Context, r)
 		if err != nil {
-			fmt.Println(err)
+			fm.Errors = append(fm.Errors, err.Error())
 			continue
 		}
 		fm.IncreaseCounter("processed")
