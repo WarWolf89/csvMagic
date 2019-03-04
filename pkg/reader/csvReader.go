@@ -39,9 +39,7 @@ func ReadCsvFile(filePath string) (*root.FileMeta, error) {
 	fm := root.NewFileMeta(uuID.String(), f.Name())
 	// Set up the mongodb service
 	metaService := mongoutils.CreateCsvService(client, "local", "META")
-
-	colln := "abc"
-	csvService := mongoutils.CreateCsvService(client, "local", colln)
+	csvService := mongoutils.CreateCsvService(client, "local", "csv-test")
 
 	// set up workers for the pool
 	for w := 1; w <= poolsize; w++ {

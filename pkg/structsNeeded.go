@@ -5,8 +5,8 @@ import (
 )
 
 type ProcRes struct {
-	Field  string `bson:"field"`
-	ValErr string `bson:"valErr"`
+	Field  string
+	ValErr string
 }
 
 type PhoneNumber struct {

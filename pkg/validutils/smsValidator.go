@@ -17,6 +17,7 @@ func init() {
 }
 
 func CheckAndFixStruct(pn *root.PhoneNumber, fm *root.FileMeta) {
+
 	// The actual validate methods are the ones defined in the struct itself, those are the ones called here
 	err := validate.Struct(pn)
 	if err != nil {
