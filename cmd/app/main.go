@@ -7,6 +7,6 @@ import (
 )
 
 func main() {
-	reader.ReadCsvFile("../../resources/csv/test.csv")
+	reader.ReadCsvFile("../../resources/csv/fullTest.csv")
 	fmt.Println("END")
 }

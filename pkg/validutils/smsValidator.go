@@ -8,12 +8,16 @@ import (
 	validator "gopkg.in/go-playground/validator.v9"
 )
 
+type fixer = func(pn *root.PhoneNumber, err validator.FieldError, fm *root.FileMeta)
+
 var (
 	validate = validator.New()
+	fixMap   = make(map[string]fixer)
 )
 
 func init() {
 	validate.RegisterValidation("custom", validateFieldForSMSPhone)
+	fixMap["SmsPhone"] = fixTrimming
 }
 
 func CheckAndFixStruct(pn *root.PhoneNumber, fm *root.FileMeta) {
@@ -27,7 +31,7 @@ func CheckAndFixStruct(pn *root.PhoneNumber, fm *root.FileMeta) {
 		}
 
 		for _, err := range err.(validator.ValidationErrors) {
-			fixVal(pn, err, fm)
+			fixMap[err.Field()](pn, err, fm)
 		}
 	}
 	if err == nil {

@@ -9,13 +9,6 @@ import (
 	validator "gopkg.in/go-playground/validator.v9"
 )
 
-type fixer = func(pn *root.PhoneNumber, err validator.FieldError, fm *root.FileMeta)
-
-func fixVal(pn *root.PhoneNumber, err validator.FieldError, fm *root.FileMeta) {
-	fixMap := make(map[string]fixer)
-	fixMap["SmsPhone"] = fixTrimming
-	fixMap[err.Field()](pn, err, fm)
-}
 func fixTrimming(pn *root.PhoneNumber, err validator.FieldError, fm *root.FileMeta) {
 	val := fmt.Sprintf("%v", err.Value())
 	// Remove all letters from phonenumber
