@@ -2,11 +2,18 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"net/http"
 
-	reader "../../pkg/reader"
+	handlers "../../pkg/handlers"
+	"github.com/gorilla/mux"
 )
 
 func main() {
-	reader.ReadCsvFile("../../resources/csv/fullTest.csv")
+
+	router := mux.NewRouter()
+	router.HandleFunc("/csvUpload", handlers.CsvUpload).Methods("POST")
+	fmt.Println("Starting server on port 8080...")
+	log.Fatal(http.ListenAndServe(":8080", router))
 	fmt.Println("END")
 }
