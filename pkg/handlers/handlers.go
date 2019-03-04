@@ -17,6 +17,6 @@ func CsvUpload(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 	name := strings.Split(header.Filename, ".")[0]
-	reader.ReadCsvFile(file, name)
+	reader.ProcessCsv(file, name)
 	return
 }

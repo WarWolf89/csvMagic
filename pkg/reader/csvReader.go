@@ -6,6 +6,7 @@ import (
 	"log"
 	"mime/multipart"
 	"sync"
+	"time"
 
 	root ".."
 	mongoutils "../mongoutils"
@@ -18,10 +19,10 @@ var (
 	client, context = mongoutils.SetupConnection("mongodb://localhost:27017")
 )
 
-func ReadCsvFile(file multipart.File, header string) (*root.FileMeta, error) {
+func ProcessCsv(file multipart.File, header string) (*root.FileMeta, error) {
 	jobch := make(chan root.PhoneNumber)
-	results := make(chan root.PhoneNumber)
 	poolsize := 20
+	start := time.Now()
 	var wg sync.WaitGroup
 
 	// generate uuid for the file and use it as a reference for later lookups
@@ -34,7 +35,7 @@ func ReadCsvFile(file multipart.File, header string) (*root.FileMeta, error) {
 	// set up workers for the pool
 	for w := 1; w <= poolsize; w++ {
 		wg.Add(1)
-		go processData(jobch, results, &wg, fm)
+		go processData(jobch, &wg, csvService, fm)
 	}
 	// Create a new reader.
 	go func() {
@@ -56,37 +57,30 @@ func ReadCsvFile(file multipart.File, header string) (*root.FileMeta, error) {
 	}()
 	go func() {
 		wg.Wait()
-		close(results)
+		fm.ExecTime = time.Since(start).Seconds()
+		writeMetaToMongo(metaService, fm)
 	}()
 
-	writeRowsToMongo(results, csvService, fm)
-	writeMetaToMongo(metaService, fm)
 	return fm, nil
 }
 
-func processData(jobs <-chan root.PhoneNumber, results chan<- root.PhoneNumber, wg *sync.WaitGroup, fm *root.FileMeta) {
+func processData(jobs <-chan root.PhoneNumber, wg *sync.WaitGroup, csvService *mongoutils.CsvService, fm *root.FileMeta) {
 	defer wg.Done()
-
 	for j := range jobs {
 		validutils.CheckAndFixStruct(&j, fm)
-		results <- j
-	}
-}
-
-func writeMetaToMongo(metaService *mongoutils.CsvService, fm *root.FileMeta) {
-	res, inErr := metaService.Collection.InsertOne(metaService.Context, fm)
-	if inErr != nil {
-		fmt.Println(inErr)
-	}
-}
-
-func writeRowsToMongo(results <-chan root.PhoneNumber, csvService *mongoutils.CsvService, fm *root.FileMeta) {
-	for r := range results {
-		_, err := csvService.Collection.InsertOne(csvService.Context, r)
+		_, err := csvService.Collection.InsertOne(csvService.Context, j)
 		if err != nil {
 			fm.Errors = append(fm.Errors, err.Error())
 			continue
 		}
 		fm.IncreaseCounter("processed")
 	}
+}
+
+func writeMetaToMongo(metaService *mongoutils.CsvService, fm *root.FileMeta) *root.FileMeta {
+	_, inErr := metaService.Collection.InsertOne(metaService.Context, fm)
+	if inErr != nil {
+		fmt.Println(inErr)
+	}
+	return fm
 }
