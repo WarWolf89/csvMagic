@@ -17,7 +17,7 @@ var (
 
 func init() {
 	validate.RegisterValidation("custom", validateFieldForSMSPhone)
-	fixMap["SmsPhone"] = fixTrimming
+	fixMap["SmsPhone"] = fixSmsPhone
 }
 
 func CheckAndFixStruct(pn *root.PhoneNumber, fm *root.FileMeta) {
@@ -37,6 +37,11 @@ func CheckAndFixStruct(pn *root.PhoneNumber, fm *root.FileMeta) {
 	if err == nil {
 		fm.IncreaseCounter("valid")
 	}
+}
+
+func CheckAndFixSingleNumber(number string) {
+	if(setupAndEvalParams(number,validate ))
+
 }
 
 // The Validator Method for phone strings
