@@ -5,8 +5,9 @@ import (
 )
 
 type ProcRes struct {
-	Field  string
-	ValErr string
+	IsValid bool
+	Field   string
+	ValErr  string
 }
 
 type PhoneNumber struct {

@@ -12,18 +12,29 @@ import (
 func fixSmsPhoneStruct(pn *root.PhoneNumber, err validator.FieldError, fm *root.FileMeta) {
 	replacement := fixTrimming(fmt.Sprintf("%v", err.Value()))
 	// If the length is still not correct create appropriate error message
-	if len(replacement) != 11 {
-		pn.procResCreate(err.Field(), "After trimming number length was still more than 11.")
+	if !isFieldValid(replacement, validateLength) {
+		pn.ProcRes = &root.ProcRes{IsValid: false, Field: err.Field(), ValErr: "After trimming number length was still more than 11."}
 		fm.IncreaseCounter("unfixable")
 		return
 	}
 	// If trimming helped replace with new value and add new result msg
 	reflect.ValueOf(pn).Elem().FieldByName(err.Field()).SetString(replacement)
 	fm.IncreaseCounter("fixed")
-	pn.procResCreate(err.Field(), fmt.Sprintf("Original value %v was trimmed down to %v.", err.Value(), replacement))
+	pn.ProcRes = &root.ProcRes{IsValid: true, Field: err.Field(), ValErr: fmt.Sprintf("Original value %v was trimmed down to %v.", err.Value(), replacement)}
 }
-func (pn *root.PhoneNumber) procResCreate(field string, valErr string) {
-	pn.ProcRes = &root.ProcRes{Field: field, ValErr: valErr}
+
+func fixSmsField(number string, pr *root.ProcRes) {
+	replacement := fixTrimming(number)
+	if !isFieldValid(replacement, validateLength) {
+		pr.Field = "sms_phone"
+		pr.ValErr = "After trimming number length was still more than 11."
+		pr.IsValid = false
+	}
+	{
+		pr.Field = "sms_phone"
+		pr.ValErr = fmt.Sprintf("Original value %v was trimmed down to %v.", number, replacement)
+		pr.IsValid = true
+	}
 }
 
 func fixTrimming(val string) string {

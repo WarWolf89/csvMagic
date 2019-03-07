@@ -2,7 +2,6 @@ package validutils
 
 import (
 	"fmt"
-	"regexp"
 
 	root "../../pkg"
 	validator "gopkg.in/go-playground/validator.v9"
@@ -17,11 +16,10 @@ var (
 
 func init() {
 	validate.RegisterValidation("custom", validateFieldForSMSPhone)
-	fixMap["SmsPhone"] = fixSmsPhone
+	fixMap["SmsPhone"] = fixSmsPhoneStruct
 }
 
 func CheckAndFixStruct(pn *root.PhoneNumber, fm *root.FileMeta) {
-
 	// The actual validate methods are the ones defined in the struct itself, those are the ones called here
 	err := validate.Struct(pn)
 	if err != nil {
@@ -39,17 +37,18 @@ func CheckAndFixStruct(pn *root.PhoneNumber, fm *root.FileMeta) {
 	}
 }
 
-func CheckAndFixSingleNumber(number string) {
-	if(setupAndEvalParams(number,validate ))
-
+func CheckAndFixSingleNumber(number string, pr *root.ProcRes) {
+	if !isFieldValid(number, validateAreCharacters, validateLength) {
+		fixSmsField(number, pr)
+	}
 }
 
 // The Validator Method for phone strings
 func validateFieldForSMSPhone(fl validator.FieldLevel) bool {
-	return setupAndEvalParams(fl.Field().String(), validateLettersAndLength)
+	return isFieldValid(fl.Field().String(), validateAreCharacters, validateLength)
 }
 
-func setupAndEvalParams(field string, options ...func(string) bool) bool {
+func isFieldValid(field string, options ...func(string) bool) bool {
 	isValid := true
 
 	for i := 0; i < len(options) && isValid; i++ {
@@ -59,14 +58,17 @@ func setupAndEvalParams(field string, options ...func(string) bool) bool {
 	return isValid
 }
 
-func validateLettersAndLength(field string) bool {
-	re := regexp.MustCompile("\\D")
+func validateAreCharacters(field string) bool {
+	isValid := true
+	for _, ch := range field {
+		if !(ch >= '0' && ch <= '9') {
+			isValid = false
+			break
+		}
+	}
+	return isValid
+}
 
-	if re.MatchString(field) {
-		return false
-	}
-	if len(field) != 11 {
-		return false
-	}
-	return true
+func validateLength(field string) bool {
+	return len(field) == 11
 }
