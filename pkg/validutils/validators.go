@@ -38,6 +38,7 @@ func CheckAndFixStruct(pn *root.PhoneNumber, fm *root.FileMeta) {
 }
 
 func CheckAndFixSingleNumber(number string, pr *root.ProcRes) {
+	fmt.Println(number)
 	if !isFieldValid(number, validateAreCharacters, validateLength) {
 		fixSmsField(number, pr)
 	}

@@ -6,8 +6,8 @@ import (
 
 type ProcRes struct {
 	IsValid bool
-	Field   string
-	ValErr  string
+	Field   string `json:",omitempty"`
+	ValErr  string `json:",omitempty"`
 }
 
 type PhoneNumber struct {
