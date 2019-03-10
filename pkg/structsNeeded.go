@@ -2,6 +2,8 @@ package root
 
 import (
 	"sync"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type ProcRes struct {
@@ -11,7 +13,7 @@ type ProcRes struct {
 }
 
 type PhoneNumber struct {
-	ID       string   `csv:"id" bson:"_id"`
+	ID       string   `csv:"id"`
 	FileID   string   `bson:"file_id"`
 	SmsPhone string   `csv:"sms_phone" bson:"sms_phone" validate:"custom"`
 	ProcRes  *ProcRes `bson:"process_results,omitempty"`
@@ -19,15 +21,15 @@ type PhoneNumber struct {
 
 type FileMeta struct {
 	sync.Mutex `bson:"-"`
-	UUID       string `bson:"_id"  json:"file_id"`
+	ID         primitive.ObjectID `bson:"_id"  json:"file_id"`
 	Name       string
 	Counters   map[string]int64 `bson:"stats" json:"stats"`
 	ExecTime   float64          `bson:"execution_time" json:"execution_time"`
 	Errors     []string         `bson:"runtime_errors,omitempty" json:"-"`
 }
 
-func NewFileMeta(uuid string, name string) *FileMeta {
-	return &FileMeta{UUID: uuid, Name: name, Counters: make(map[string]int64), Errors: []string{}}
+func NewFileMeta(uuid primitive.ObjectID, name string) *FileMeta {
+	return &FileMeta{ID: uuid, Name: name, Counters: make(map[string]int64), Errors: []string{}}
 }
 
 func (fm *FileMeta) IncreaseCounter(key string) {

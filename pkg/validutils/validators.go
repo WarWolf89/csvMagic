@@ -37,14 +37,15 @@ func CheckAndFixStruct(pn *root.PhoneNumber, fm *root.FileMeta) {
 	}
 }
 
-func CheckAndFixSingleNumber(number string, pr *root.ProcRes) {
-	fmt.Println(number)
+func CheckAndFixSingleNumber(number string) *root.ProcRes {
+	pr := &root.ProcRes{IsValid: true}
 	if !isFieldValid(number, validateAreCharacters, validateLength) {
 		fixSmsField(number, pr)
 	}
+	return pr
 }
 
-// The Validator Method for phone strings
+// The Validator Method for phone fields in structs
 func validateFieldForSMSPhone(fl validator.FieldLevel) bool {
 	return isFieldValid(fl.Field().String(), validateAreCharacters, validateLength)
 }

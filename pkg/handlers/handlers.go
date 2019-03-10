@@ -1,17 +1,14 @@
 package handlers
 
 import (
-	"bytes"
-	"io"
-	"io/ioutil"
-	"log"
+	"fmt"
 	"net/http"
 	"strings"
 
-	root ".."
 	reader "../reader"
 	restutils "../restutils"
 	validutils "../validutils"
+	"github.com/gorilla/mux"
 )
 
 // Uploads a File and send it to be processed
@@ -32,17 +29,19 @@ func CsvUpload(w http.ResponseWriter, r *http.Request) {
 }
 
 func ValidateSingleNumber(w http.ResponseWriter, req *http.Request) {
-	procRes := &root.ProcRes{}
-	var r io.Reader
-	r = req.Body
-	var buf bytes.Buffer
-	tee := io.TeeReader(r, &buf)
+	vars := mux.Vars(req)
+	fmt.Println(vars)
+	num := vars["num"]
+	pr := validutils.CheckAndFixSingleNumber(num)
+	restutils.RespondWithJSON(w, http.StatusOK, pr)
+}
 
-	b, err := ioutil.ReadAll(tee)
+func GetFileInfo(w http.ResponseWriter, req *http.Request) {
+	vars := mux.Vars(req)
+	fid := vars["fid"]
+	fm, err := reader.GetFileByID(fid)
 	if err != nil {
-		log.Fatal(err)
+		restutils.RespondWithError(w, http.StatusInternalServerError, err.Error())
 	}
-	num := string(b)
-	validutils.CheckAndFixSingleNumber(num, procRes)
-	restutils.RespondWithJSON(w, http.StatusCreated, procRes)
+	restutils.RespondWithJSON(w, http.StatusOK, fm)
 }

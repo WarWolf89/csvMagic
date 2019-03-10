@@ -11,12 +11,14 @@ import (
 	root ".."
 	mongoutils "../mongoutils"
 	validutils "../validutils"
-	"github.com/rs/xid"
 	"github.com/smartystreets/scanners/csv"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 var (
 	client, context = mongoutils.SetupConnection("mongodb://localhost:27017")
+	metaService     = mongoutils.CreateCsvService(client, "local", "META")
+	csvService      = mongoutils.CreateCsvService(client, "local", "csv-test")
 )
 
 func ProcessCsv(file multipart.File, name string) (*root.FileMeta, error) {
@@ -26,12 +28,11 @@ func ProcessCsv(file multipart.File, name string) (*root.FileMeta, error) {
 	var wg sync.WaitGroup
 
 	// generate uuid for the file and use it as a reference for later lookups
-	uuID := xid.New()
+	ID := primitive.NewObjectID()
 	// set up the meta struct for response
-	fm := root.NewFileMeta(uuID.String(), name)
+	fm := root.NewFileMeta(ID, name)
 	// Set up the mongodb service
-	metaService := mongoutils.CreateCsvService(client, "local", "META")
-	csvService := mongoutils.CreateCsvService(client, "local", "csv-test")
+
 	// set up workers for the pool
 	for w := 1; w <= poolsize; w++ {
 		wg.Add(1)
@@ -49,7 +50,7 @@ func ProcessCsv(file multipart.File, name string) (*root.FileMeta, error) {
 			log.Panic(err)
 		}
 
-		pn.FileID = uuID.String()
+		pn.FileID = ID.String()
 		jobch <- pn
 	}
 	close(jobch)
