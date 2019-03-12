@@ -15,11 +15,19 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+const (
+	db      = "local"
+	collCSV = "csv-test"
+	collMet = "META"
+)
+
 var (
 	client, context = mongoutils.SetupConnection("mongodb://localhost:27017")
-	metaService     = mongoutils.CreateCsvService(client, "local", "META")
-	csvService      = mongoutils.CreateCsvService(client, "local", "csv-test")
+	metaService     = mongoutils.CreateCsvService(client, db, collMet)
+	csvService      = mongoutils.CreateCsvService(client, db, collCSV)
 )
+
+func init() { mongoutils.PopulateIndex(db, collCSV, client, "file_id") }
 
 func ProcessCsv(file multipart.File, name string) (*root.FileMeta, error) {
 	jobch := make(chan root.PhoneNumber)
@@ -50,7 +58,7 @@ func ProcessCsv(file multipart.File, name string) (*root.FileMeta, error) {
 			log.Panic(err)
 		}
 
-		pn.FileID = ID.String()
+		pn.FileID = ID.Hex()
 		jobch <- pn
 	}
 	close(jobch)
@@ -60,7 +68,6 @@ func ProcessCsv(file multipart.File, name string) (*root.FileMeta, error) {
 	// set execution time and write file data to mongo
 	fm.ExecTime = time.Since(start).Seconds()
 	writeMetaToMongo(metaService, fm)
-
 	return fm, nil
 }
 
