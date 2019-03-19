@@ -28,7 +28,13 @@ var (
 	csvService  = mongoutils.NewDBService(addr, db, collCSV)
 )
 
-func init() { csvService.PopulateIndex(iCSV) }
+func init() {
+	iName, err := csvService.PopulateIndex(iCSV)
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Printf("created index %s \n", *iName)
+}
 
 func ProcessCsv(file multipart.File, name string) (*root.FileMeta, error) {
 	jobch := make(chan root.PhoneNumber)

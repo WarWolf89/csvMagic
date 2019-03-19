@@ -28,12 +28,16 @@ func setupConnection(uri string) (*mongo.Client, context.Context) {
 	return client, context
 }
 
-func (s *DBService) PopulateIndex(key string) {
+func (s *DBService) PopulateIndex(key string) (*string, error) {
 	c := s.Collection
 	opts := options.CreateIndexes().SetMaxTime(10 * time.Second)
 	index := yieldIndexModel(key)
-	c.Indexes().CreateOne(context.Background(), index, opts)
-	log.Println("Successfully created the index")
+	iName, err := c.Indexes().CreateOne(context.Background(), index, opts)
+	if err != nil {
+		fmt.Println(err)
+		return &iName, err
+	}
+	return &iName, nil
 }
 
 func yieldIndexModel(key string) mongo.IndexModel {
