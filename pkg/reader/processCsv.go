@@ -16,18 +16,19 @@ import (
 )
 
 const (
+	addr    = "mongodb://localhost:27017"
 	db      = "local"
+	iCSV    = "file_id"
 	collCSV = "csv-test"
 	collMet = "META"
 )
 
 var (
-	client, context = mongoutils.SetupConnection("mongodb://localhost:27017")
-	metaService     = mongoutils.CreateCsvService(client, db, collMet)
-	csvService      = mongoutils.CreateCsvService(client, db, collCSV)
+	metaService = mongoutils.NewDBService(addr, db, collMet)
+	csvService  = mongoutils.NewDBService(addr, db, collCSV)
 )
 
-func init() { mongoutils.PopulateIndex(db, collCSV, client, "file_id") }
+func init() { csvService.PopulateIndex(iCSV) }
 
 func ProcessCsv(file multipart.File, name string) (*root.FileMeta, error) {
 	jobch := make(chan root.PhoneNumber)
@@ -71,7 +72,7 @@ func ProcessCsv(file multipart.File, name string) (*root.FileMeta, error) {
 	return fm, nil
 }
 
-func processData(jobs <-chan root.PhoneNumber, wg *sync.WaitGroup, csvService *mongoutils.CsvService, fm *root.FileMeta) {
+func processData(jobs <-chan root.PhoneNumber, wg *sync.WaitGroup, csvService *mongoutils.DBService, fm *root.FileMeta) {
 	defer wg.Done()
 	for j := range jobs {
 		validutils.CheckAndFixStruct(&j, fm)
@@ -84,7 +85,7 @@ func processData(jobs <-chan root.PhoneNumber, wg *sync.WaitGroup, csvService *m
 	}
 }
 
-func writeMetaToMongo(metaService *mongoutils.CsvService, fm *root.FileMeta) *root.FileMeta {
+func writeMetaToMongo(metaService *mongoutils.DBService, fm *root.FileMeta) *root.FileMeta {
 	_, inErr := metaService.Collection.InsertOne(metaService.Context, fm)
 	if inErr != nil {
 		fmt.Println(inErr)

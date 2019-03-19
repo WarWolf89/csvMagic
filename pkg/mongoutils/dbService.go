@@ -12,12 +12,14 @@ import (
 	"go.mongodb.org/mongo-driver/x/bsonx"
 )
 
-type CsvService struct {
+type DBService struct {
+	Client     *mongo.Client
 	Context    context.Context
+	DB         *mongo.Database
 	Collection *mongo.Collection
 }
 
-func SetupConnection(uri string) (*mongo.Client, context.Context) {
+func setupConnection(uri string) (*mongo.Client, context.Context) {
 	client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(uri))
 	if err != nil {
 		panic(err)
@@ -26,18 +28,12 @@ func SetupConnection(uri string) (*mongo.Client, context.Context) {
 	return client, context
 }
 
-func CreateCsvService(client *mongo.Client, db string, collName string) *CsvService {
-
-	collection := client.Database(db).Collection(collName)
-	return &CsvService{Context: context.Background(), Collection: collection}
-}
-
-func PopulateIndex(database, collection string, client *mongo.Client, key string) {
-	c := client.Database(database).Collection(collection)
+func (s *DBService) PopulateIndex(key string) {
+	c := s.Collection
 	opts := options.CreateIndexes().SetMaxTime(10 * time.Second)
 	index := yieldIndexModel(key)
 	c.Indexes().CreateOne(context.Background(), index, opts)
-	log.Println("Successfully create the index")
+	log.Println("Successfully created the index")
 }
 
 func yieldIndexModel(key string) mongo.IndexModel {
@@ -64,4 +60,11 @@ func ListIndexes(client *mongo.Client, database, collection string) {
 		cur.Decode(&index)
 		log.Println(fmt.Sprintf("index found %v", index))
 	}
+}
+
+func NewDBService(address string, dbname string, collname string) *DBService {
+	client, context := setupConnection(address)
+	db := client.Database(dbname)
+	collection := db.Collection(collname)
+	return &DBService{Context: context, Collection: collection, DB: db, Client: client}
 }
