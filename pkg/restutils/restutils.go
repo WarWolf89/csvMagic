@@ -16,3 +16,10 @@ func RespondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 	w.WriteHeader(code)
 	w.Write(response)
 }
+
+func RespondWithFile(w http.ResponseWriter, code int, payload []byte) {
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(code)
+	w.Write(payload)
+}

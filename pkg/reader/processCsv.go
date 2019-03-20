@@ -41,30 +41,25 @@ func ProcessCsv(file multipart.File, name string) (*root.FileMeta, error) {
 	poolsize := 20
 	start := time.Now()
 	var wg sync.WaitGroup
-
+	var pn root.PhoneNumber
 	// generate uuid for the file and use it as a reference for later lookups
 	ID := primitive.NewObjectID()
 	// set up the meta struct for response
 	fm := root.NewFileMeta(ID, name)
-	// Set up the mongodb service
-
 	// set up workers for the pool
 	for w := 1; w <= poolsize; w++ {
 		wg.Add(1)
 		go processData(jobch, &wg, csvService, fm)
 	}
 	// Create a new reader.
-
 	scanner, err := csv.NewStructScanner(bufio.NewReader(file))
 	if err != nil {
 		log.Panic(err)
 	}
-	var pn root.PhoneNumber
 	for scanner.Scan() {
 		if err := scanner.Populate(&pn); err != nil {
 			log.Panic(err)
 		}
-
 		pn.FileID = ID.Hex()
 		jobch <- pn
 	}

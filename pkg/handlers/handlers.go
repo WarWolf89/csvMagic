@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -25,7 +26,12 @@ func CsvUpload(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		restutils.RespondWithError(w, http.StatusInternalServerError, err.Error())
 	}
-	restutils.RespondWithJSON(w, http.StatusCreated, fm)
+	resData, ferr := json.MarshalIndent(fm, "", " ")
+	if ferr != nil {
+		restutils.RespondWithError(w, http.StatusInternalServerError, ferr.Error())
+	}
+
+	restutils.RespondWithFile(w, http.StatusCreated, resData)
 }
 
 func ValidateSingleNumber(w http.ResponseWriter, req *http.Request) {

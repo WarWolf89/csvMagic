@@ -3,7 +3,6 @@ package validutils
 import (
 	"fmt"
 	"reflect"
-	"regexp"
 
 	root "../../pkg"
 	validator "gopkg.in/go-playground/validator.v9"
@@ -12,7 +11,7 @@ import (
 func fixSmsPhoneStruct(pn *root.PhoneNumber, err validator.FieldError, fm *root.FileMeta) {
 	replacement := fixTrimming(fmt.Sprintf("%v", err.Value()))
 	// If the length is still not correct create appropriate error message
-	if !isFieldValid(replacement, validateLength) {
+	if !isFieldValid(replacement, validateNumberFormat) {
 		pn.ProcRes = &root.ProcRes{IsValid: false, Field: err.Field(), ValErr: lengthError}
 		fm.IncreaseCounter("unfixable")
 		return
@@ -25,8 +24,7 @@ func fixSmsPhoneStruct(pn *root.PhoneNumber, err validator.FieldError, fm *root.
 
 func fixSmsField(number string, pr *root.ProcRes) {
 	replacement := fixTrimming(number)
-	fmt.Println(replacement)
-	if !isFieldValid(replacement, validateLength) {
+	if !isFieldValid(replacement, validateNumberFormat) {
 		pr.ValErr = lengthError
 		pr.IsValid = false
 	} else {
@@ -37,5 +35,5 @@ func fixSmsField(number string, pr *root.ProcRes) {
 
 func fixTrimming(val string) string {
 	// Remove all letters from phonenumber
-	return regexp.MustCompile("\\D").ReplaceAllString(val, "")
+	return rChar.ReplaceAllString(val, "")
 }

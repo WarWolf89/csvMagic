@@ -2,6 +2,7 @@ package validutils
 
 import (
 	"fmt"
+	"regexp"
 
 	root "../../pkg"
 	validator "gopkg.in/go-playground/validator.v9"
@@ -10,6 +11,8 @@ import (
 type fixer = func(pn *root.PhoneNumber, err validator.FieldError, fm *root.FileMeta)
 
 var (
+	rChar    = regexp.MustCompile("\\D")
+	rNum     = regexp.MustCompile("^((?:27)|0)(=72|82|73|83|74|84)(\\d{7})$")
 	validate = validator.New()
 	fixMap   = make(map[string]fixer)
 )
@@ -39,7 +42,7 @@ func CheckAndFixStruct(pn *root.PhoneNumber, fm *root.FileMeta) {
 
 func CheckAndFixSingleNumber(number string) *root.ProcRes {
 	pr := &root.ProcRes{IsValid: true}
-	if !isFieldValid(number, validateAreCharacters, validateLength) {
+	if !isFieldValid(number, validateAreCharacters, validateNumberFormat) {
 		fixSmsField(number, pr)
 	}
 	return pr
@@ -47,7 +50,7 @@ func CheckAndFixSingleNumber(number string) *root.ProcRes {
 
 // The Validator Method for phone fields in structs
 func validateFieldForSMSPhone(fl validator.FieldLevel) bool {
-	return isFieldValid(fl.Field().String(), validateAreCharacters, validateLength)
+	return isFieldValid(fl.Field().String(), validateAreCharacters, validateNumberFormat)
 }
 
 func isFieldValid(field string, options ...func(string) bool) bool {
@@ -61,16 +64,10 @@ func isFieldValid(field string, options ...func(string) bool) bool {
 }
 
 func validateAreCharacters(field string) bool {
-	isValid := true
-	for _, ch := range field {
-		if !(ch >= '0' && ch <= '9') {
-			isValid = false
-			break
-		}
-	}
-	return isValid
+	// Need to reverse the value because if the match is true it means it's not valid
+	return !rChar.MatchString(field)
 }
 
-func validateLength(field string) bool {
-	return len(field) == 11
+func validateNumberFormat(field string) bool {
+	return rNum.MatchString(field)
 }
