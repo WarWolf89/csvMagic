@@ -31,7 +31,7 @@ func CsvUpload(w http.ResponseWriter, r *http.Request) {
 		restutils.RespondWithError(w, http.StatusInternalServerError, ferr.Error())
 	}
 
-	restutils.RespondWithFile(w, http.StatusCreated, resData)
+	restutils.RespondWithFile(w, http.StatusCreated, resData, name)
 }
 
 func ValidateSingleNumber(w http.ResponseWriter, req *http.Request) {

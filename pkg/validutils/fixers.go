@@ -1,6 +1,7 @@
 package validutils
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 
@@ -9,23 +10,24 @@ import (
 )
 
 func fixSmsPhoneStruct(pn *root.PhoneNumber, err validator.FieldError, fm *root.FileMeta) {
-	replacement := fixTrimming(fmt.Sprintf("%v", err.Value()))
-	// If the length is still not correct create appropriate error message
-	if !isFieldValid(replacement, validateNumberFormat) {
-		pn.ProcRes = &root.ProcRes{IsValid: false, Field: err.Field(), ValErr: lengthError}
+	replacements := removeChars(fmt.Sprintf("%v", err.Value()))
+	replacement, ferr := findSingleValidNumber(replacements)
+	if ferr != nil {
+		pn.ProcRes = &root.ProcRes{IsValid: false, Field: err.Field(), ValErr: ferr.Error()}
 		fm.IncreaseCounter("unfixable")
 		return
 	}
-	// If trimming helped replace with new value and add new result msg
-	reflect.ValueOf(pn).Elem().FieldByName(err.Field()).SetString(replacement)
+	reflect.ValueOf(pn).Elem().FieldByName(err.Field()).SetString(*replacement)
 	fm.IncreaseCounter("fixed")
-	pn.ProcRes = &root.ProcRes{IsValid: true, Field: err.Field(), ValErr: fmt.Sprintf(succFix, err.Value(), replacement)}
+	pn.ProcRes = &root.ProcRes{IsValid: true, Field: err.Field(), ValErr: fmt.Sprintf(succFix, err.Value(), *replacement)}
+
 }
 
 func fixSmsField(number string, pr *root.ProcRes) {
-	replacement := fixTrimming(number)
-	if !isFieldValid(replacement, validateNumberFormat) {
-		pr.ValErr = lengthError
+	replacements := removeChars(number)
+	replacement, err := findSingleValidNumber(replacements)
+	if err != nil {
+		pr.ValErr = err.Error()
 		pr.IsValid = false
 	} else {
 		pr.ValErr = fmt.Sprintf(succFix, number, replacement)
@@ -33,7 +35,16 @@ func fixSmsField(number string, pr *root.ProcRes) {
 	}
 }
 
-func fixTrimming(val string) string {
-	// Remove all letters from phonenumber
-	return rChar.ReplaceAllString(val, "")
+func findSingleValidNumber(replacements []string) (*string, error) {
+
+	for _, repl := range replacements {
+		if isFieldValid(repl, validateNumberFormat) {
+			return &repl, nil
+		}
+	}
+	return nil, errors.New("there was no valid number in the corrupted field")
+}
+
+func removeChars(val string) []string {
+	return rChar.Split(val, -1)
 }
