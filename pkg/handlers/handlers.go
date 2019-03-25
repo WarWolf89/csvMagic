@@ -2,19 +2,18 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
+	"log"
 	"net/http"
 	"strings"
 
-	reader "../reader"
-	restutils "../restutils"
-	validutils "../validutils"
+	"../reader"
+	"../restutils"
+	"../validutils"
 	"github.com/gorilla/mux"
 )
 
 // Uploads a File and send it to be processed
 func CsvUpload(w http.ResponseWriter, r *http.Request) {
-	r.ParseMultipartForm(32 << 20)
 
 	file, header, err := r.FormFile("file")
 	if err != nil {
@@ -36,8 +35,8 @@ func CsvUpload(w http.ResponseWriter, r *http.Request) {
 
 func ValidateSingleNumber(w http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
-	fmt.Println(vars)
 	num := vars["num"]
+	log.Printf("received number %v",num)
 	pr := validutils.CheckAndFixSingleNumber(num)
 	restutils.RespondWithJSON(w, http.StatusOK, pr)
 }

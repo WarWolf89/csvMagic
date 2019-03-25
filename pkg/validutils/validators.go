@@ -1,7 +1,7 @@
 package validutils
 
 import (
-	"fmt"
+	"log"
 	"regexp"
 
 	"../../pkg"
@@ -27,12 +27,14 @@ func CheckAndFixStruct(pn *root.PhoneNumber, fm *root.FileMeta) {
 	err := validate.Struct(pn)
 	if err != nil {
 		if _, ok := err.(*validator.InvalidValidationError); ok {
-			fmt.Println(err)
+			log.Fatal(err)
 			return
 		}
 
 		for _, err := range err.(validator.ValidationErrors) {
-			fixMap[err.Field()](pn, err, fm)
+			if fixer, ok := fixMap[err.Field()]; ok {
+				fixer(pn, err, fm)
+			}
 		}
 	}
 	if err == nil {

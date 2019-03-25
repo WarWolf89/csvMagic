@@ -32,7 +32,7 @@ func fixSmsField(number string, pr *root.ProcRes) {
 		pr.ValErr = err.Error()
 		pr.IsValid = false
 	} else {
-		pr.ValErr = fmt.Sprintf(succFix, number, replacement)
+		pr.ValErr = fmt.Sprintf(succFix, number, *replacement)
 		pr.IsValid = true
 	}
 }

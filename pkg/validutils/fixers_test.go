@@ -43,7 +43,7 @@ func TestFixSmsPhoneStructFail(t *testing.T) {
 }
 
 func TestRemoveChars(t *testing.T) {
-	replacements := removeChars("27735405794_DELETED_148898755")
+	replacements := removeChars(badNumCharsFix)
 	t.Log(replacements)
 	if len(replacements) != 2 {
 		t.Errorf("Expected two numbers valid number instead got %v", len(replacements))
@@ -51,7 +51,7 @@ func TestRemoveChars(t *testing.T) {
 }
 
 func TestFindValidNumber(t *testing.T) {
-	replacements := removeChars("27735405794_DELETED_148898755")
+	replacements := removeChars(badNumCharsFix)
 	t.Log(replacements)
 	valNum, _ :=  findSingleValidNumber(replacements)
 	t.Log(*valNum)

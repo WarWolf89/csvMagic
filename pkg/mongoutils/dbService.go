@@ -9,6 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/mongo/readpref"
 	"go.mongodb.org/mongo-driver/x/bsonx"
 )
 
@@ -24,8 +25,12 @@ func setupConnection(uri string) (*mongo.Client, context.Context) {
 	if err != nil {
 		panic(err)
 	}
-	context := context.Background()
-	return client, context
+	ctx := context.Background()
+	cErr := client.Ping(ctx, readpref.Primary())
+	if cErr != nil {
+		log.Fatalf("No mongo connection to specified DB, check values, error: %v",cErr)
+	}
+	return client, ctx
 }
 
 func (s *DBService) PopulateIndex(key string) (*string, error) {
@@ -34,7 +39,7 @@ func (s *DBService) PopulateIndex(key string) (*string, error) {
 	index := yieldIndexModel(key)
 	iName, err := c.Indexes().CreateOne(context.Background(), index, opts)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return &iName, err
 	}
 	return &iName, nil
@@ -67,8 +72,8 @@ func ListIndexes(client *mongo.Client, database, collection string) {
 }
 
 func NewDBService(address string, dbname string, collname string) *DBService {
-	client, context := setupConnection(address)
+	client, ctx := setupConnection(address)
 	db := client.Database(dbname)
 	collection := db.Collection(collname)
-	return &DBService{Context: context, Collection: collection, DB: db, Client: client}
+	return &DBService{Context: ctx, Collection: collection, DB: db, Client: client}
 }

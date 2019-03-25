@@ -2,15 +2,14 @@ package reader
 
 import (
 	"bufio"
-	"fmt"
 	"log"
 	"mime/multipart"
 	"sync"
 	"time"
 
-	root ".."
-	mongoutils "../mongoutils"
-	validutils "../validutils"
+	".."
+	"../mongoutils"
+	"../validutils"
 	"github.com/smartystreets/scanners/csv"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -21,6 +20,7 @@ const (
 	iCSV    = "file_id"
 	collCSV = "csv-test"
 	collMet = "META"
+
 )
 
 var (
@@ -31,12 +31,14 @@ var (
 func init() {
 	iName, err := csvService.PopulateIndex(iCSV)
 	if err != nil {
-		fmt.Println(err)
+		log.Print(err)
+		return
 	}
-	fmt.Printf("created index %s \n", *iName)
+	log.Printf("created index %s \n", *iName)
 }
 
 func ProcessCsv(file multipart.File, name string) (*root.FileMeta, error) {
+	log.Printf("starting file %v",name)
 	jobch := make(chan root.PhoneNumber)
 	poolsize := 20
 	start := time.Now()
@@ -70,6 +72,7 @@ func ProcessCsv(file multipart.File, name string) (*root.FileMeta, error) {
 	// set execution time and write file data to mongo
 	fm.ExecTime = time.Since(start).Seconds()
 	writeMetaToMongo(metaService, fm)
+	log.Printf("END OF FILE %v", name)
 	return fm, nil
 }
 
@@ -89,7 +92,7 @@ func processData(jobs <-chan root.PhoneNumber, wg *sync.WaitGroup, csvService *m
 func writeMetaToMongo(metaService *mongoutils.DBService, fm *root.FileMeta) *root.FileMeta {
 	_, inErr := metaService.Collection.InsertOne(metaService.Context, fm)
 	if inErr != nil {
-		fmt.Println(inErr)
+		log.Println(inErr)
 	}
 	return fm
 }
