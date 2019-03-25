@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"regexp"
 
-	root "../../pkg"
-	validator "gopkg.in/go-playground/validator.v9"
+	"../../pkg"
+	"gopkg.in/go-playground/validator.v9"
 )
 
 type fixer = func(pn *root.PhoneNumber, err validator.FieldError, fm *root.FileMeta)
@@ -48,7 +48,7 @@ func CheckAndFixSingleNumber(number string) *root.ProcRes {
 	return pr
 }
 
-// The Validator Method for phone fields in structs
+// The Validator Method for phone fields in structs. This is a wrapper method for generic struct level use
 func validateFieldForSMSPhone(fl validator.FieldLevel) bool {
 	return isFieldValid(fl.Field().String(), validateAreCharacters, validateNumberFormat)
 }
@@ -64,7 +64,7 @@ func isFieldValid(field string, options ...func(string) bool) bool {
 }
 
 func validateAreCharacters(field string) bool {
-	// Need to reverse the value because if the match is true it means it's not valid
+	// Need to reverse the value because if the match is true it means it has characters therefore it's not valid
 	return !rChar.MatchString(field)
 }
 

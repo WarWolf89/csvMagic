@@ -4,9 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strings"
+	"unicode"
 
-	root "../../pkg"
-	validator "gopkg.in/go-playground/validator.v9"
+	"../../pkg"
+	"gopkg.in/go-playground/validator.v9"
 )
 
 func fixSmsPhoneStruct(pn *root.PhoneNumber, err validator.FieldError, fm *root.FileMeta) {
@@ -46,5 +48,10 @@ func findSingleValidNumber(replacements []string) (*string, error) {
 }
 
 func removeChars(val string) []string {
-	return rChar.Split(val, -1)
+	return strings.FieldsFunc(val,splitHelper)
+}
+
+// helper function to remove all non-digit characters from the incoming string
+func splitHelper (c rune) bool {
+	return !unicode.IsNumber(c)
 }
