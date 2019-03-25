@@ -71,4 +71,5 @@ the csv file you're uploading
   * better error handling
   * better logging
   * multiform reading for uploaded file
+  * mongodb should be mocked for test or at least drop the table after the test exec is finished
   
